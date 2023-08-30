@@ -20,8 +20,11 @@ struct Identifier
 };
 ```
 -----
-![image](https://github.com/Fischsalat/IDAExecFunctionsImporter/assets/64608145/15b7c443-2742-40f5-8071-4238448b6269)
-![image](https://github.com/Fischsalat/IDAExecFunctionsImporter/assets/64608145/bfc1ab5b-c2df-4123-ac9d-208f77c2cc12)
+Exec-Functions             |  VirtualFunctionTables
+:-------------------------:|:-------------------------:
+![image](https://github.com/Fischsalat/IDAExecFunctionsImporter/assets/64608145/15b7c443-2742-40f5-8071-4238448b6269)  |  ![image](https://github.com/Fischsalat/IDAExecFunctionsImporter/assets/64608145/bfc1ab5b-c2df-4123-ac9d-208f77c2cc12)
+
+
 
 
 
