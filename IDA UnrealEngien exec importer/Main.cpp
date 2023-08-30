@@ -23,15 +23,10 @@ struct plugin_ctx_t : public plugmod_t
 	{
 		ida_string result = ask_file(false, "*.idmap", "Load the file, or %s", "die!");
 		
-		const char* reselult = result.c_str();
-
-		msg("Selected result.c_str(): %s\n", result.c_str());
-
 		ida_file selected_file(result, ida_file::open_mode::binary_read_only);
 
 		auto image_base = get_real_imagebase();
 		msg("Imagebase: 0x%llX\n", image_base);
-		msg("Imagebase: 0x%llX\n", get_real_imagebase());
 
 		hook_type_t processor_hook = HT_IDP;
 

@@ -37,12 +37,14 @@ public:
 		, pos(0)
 		, size(0)
 	{
+		if (!file_path)
+			return;
+
 		if (open_file(file_path, new_mode))
 		{
 			qfseek(file, 0, SEEK_END);
 			size = qftell(file);
 			qfseek(file, 0, SEEK_SET);
-			msg("POS: %d", qftell(file));
 		}
 	}
 

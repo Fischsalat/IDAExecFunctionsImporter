@@ -183,9 +183,6 @@ ida64.exe</Command>
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Hell.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="ida_file.h" />
     <ClInclude Include="ida_string.h" />
   </ItemGroup>

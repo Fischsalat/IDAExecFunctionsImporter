@@ -37,6 +37,9 @@ public:
 		: buffer_start(nullptr)
 		, buffer_end(nullptr)
 	{
+		if (!str)
+			return;
+
 		//int length = ida_string_base::strlen(str);
 		int length = qstrlen(str);
 
