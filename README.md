@@ -10,7 +10,7 @@ Currently imported:
 
 -----
 
-### The expected format is:
+### Format expected by the plugin:
 ```c++
 struct Identifier
 {
