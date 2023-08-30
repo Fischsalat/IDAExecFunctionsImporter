@@ -21,11 +21,6 @@ struct plugin_ctx_t : public plugmod_t
 {
 	virtual bool idaapi run(size_t) override
 	{
-		msg("Hello, world! (cpp)\n");
-		msg("Imagebase: 0x%X\n", get_imagebase());
-		msg("Addr: 0x%X\n", get_real_imagebase() + 0x1444);
-		set_name((get_real_imagebase() + 0x1444), "IDK::Hell2");
-
 		ida_string result = ask_file(false, "*.idmap", "Load the file, or %s", "die!");
 		
 		const char* reselult = result.c_str();
@@ -79,6 +74,6 @@ plugin_t PLUGIN =
   nullptr,
   nullptr,              // long comment about the plugin
   nullptr,              // multiline help about the plugin
-  "HellWorld",          // the preferred short name of the plugin
-  "Ctrl-Alt-A",              // the preferred hotkey to run the plugin
+  "IDAExecFunctionsImporter", // the preferred short name of the plugin
+  "Ctrl-Alt-A",         // the preferred hotkey to run the plugin
 };
