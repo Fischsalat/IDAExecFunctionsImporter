@@ -52,7 +52,7 @@ public:
 				ida_string name_string = selected_file.read_string(name_len);
 
 
-				set_name(image_base + offset, name_string.c_str(), SN_DELTAIL);
+				set_name(image_base + offset, name_string.c_str());
 
 				//msg("offset: 0x%X\n", offset);
 				//msg("name_len: 0x%X\n", name_len);
