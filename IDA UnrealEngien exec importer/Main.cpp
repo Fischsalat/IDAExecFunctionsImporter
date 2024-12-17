@@ -3,7 +3,7 @@
 #include <idp.hpp>
 #include <loader.hpp>
 #include <bytes.hpp>
-
+#include <funcs.hpp>
 #include <fpro.h>
 #include <name.hpp>
 #include <diskio.hpp>
@@ -17,8 +17,20 @@ size_t get_real_imagebase()
 	return getinf(INF_IMAGEBASE);
 }
 
-struct plugin_ctx_t : public plugmod_t
+class plugin_ctx_t : public plugmod_t
 {
+public:
+	// Constructor
+	plugin_ctx_t()
+	{
+		msg("MyPlugmod: Constructor called.\n");
+	}
+
+	// Destructor
+	virtual ~plugin_ctx_t()
+	{
+		msg("MyPlugmod: Destructor called.\n");
+	}
 	virtual bool idaapi run(size_t) override
 	{
 		ida_string result = ask_file(false, "*.idmap", "Load the file, or %s", "die!");
@@ -39,6 +51,7 @@ struct plugin_ctx_t : public plugmod_t
 
 				ida_string name_string = selected_file.read_string(name_len);
 
+
 				set_name(image_base + offset, name_string.c_str());
 
 				//msg("offset: 0x%X\n", offset);
@@ -53,7 +66,7 @@ struct plugin_ctx_t : public plugmod_t
 
 
 //--------------------------------------------------------------------------
-static plugmod_t* idaapi init()
+static plugmod_t* idaapi init(void)
 {
 	return new plugin_ctx_t;
 }
