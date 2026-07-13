@@ -19,11 +19,13 @@
       <Filter>Import</Filter>
     </ClInclude>
     <ClInclude Include="Import\StructBuilder.hpp" />
-    <ClInclude Include="Format\Format.hpp" />
     <ClInclude Include="Format\Parser.hpp" />
     <ClInclude Include="Import\MappingsImporter.hpp" />
     <ClInclude Include="StaticClassNamer.hpp" />
     <ClInclude Include="FNameConstantNamer.hpp" />
     <ClInclude Include="Utility.hpp" />
+    <ClInclude Include="Format\IDAMappingLayout.hpp" />
+    <ClInclude Include="Import\ExecRename.hpp" />
+    <ClInclude Include="Import\ExecSignatures.hpp" />
   </ItemGroup>
 </Project>
