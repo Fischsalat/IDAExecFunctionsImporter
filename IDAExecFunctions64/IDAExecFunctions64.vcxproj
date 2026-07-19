@@ -68,10 +68,10 @@
     <IDASDKPath>$(SolutionDir)IDA-SDK\src</IDASDKPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(AppData)\Hex-Rays\IDA Pro\plugins</OutDir>
+    <OutDir>$(AppData)\Hex-Rays\IDA Pro\plugins\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(AppData)\Hex-Rays\IDA Pro\plugins</OutDir>
+    <OutDir>$(AppData)\Hex-Rays\IDA Pro\plugins\</OutDir>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
     <PublicIncludeDirectories>$(PublicIncludeDirectories)</PublicIncludeDirectories>
   </PropertyGroup>
