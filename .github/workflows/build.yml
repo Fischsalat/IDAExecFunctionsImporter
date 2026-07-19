@@ -2,6 +2,10 @@ name: Build IDA plugin
 
 on:
   push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -21,8 +25,7 @@ jobs:
           - ida_version: "9.3"
             sdk_ref: v9.3.1-release
           - ida_version: "9.4"
-            # Pin this to the v9.4.x-release tag once Hex-Rays publishes it.
-            sdk_ref: main
+            sdk_ref: v9.4.0-release
 
     steps:
       - name: Check out repository
@@ -54,16 +57,61 @@ jobs:
             "/p:IDASDKPath=${{ github.workspace }}\ida-sdk-${{ matrix.ida_version }}\src"
             "/p:OutDir=$OutputDirectory\"
           )
+
           & msbuild @Arguments
+
           if ($LASTEXITCODE -ne 0) {
             throw "MSBuild failed with exit code $LASTEXITCODE."
           }
+
+      - name: Package plugin
+        shell: pwsh
+        run: |
+          $InputDirectory = Join-Path $env:RUNNER_TEMP "plugin-${{ matrix.ida_version }}"
+          $PackageDirectory = Join-Path $env:RUNNER_TEMP "packages"
+          $PackageName = "IDAExecFunctionsImporter-ida-${{ matrix.ida_version }}-windows-x64.zip"
+          $PackagePath = Join-Path $PackageDirectory $PackageName
+
+          New-Item -ItemType Directory -Force -Path $PackageDirectory | Out-Null
+
+          $Files = Get-ChildItem -Path $InputDirectory -File |
+            Where-Object { $_.Extension -in ".dll", ".pdb" }
+
+          if (-not $Files) {
+            throw "No plugin files were produced."
+          }
+
+          Compress-Archive `
+            -Path $Files.FullName `
+            -DestinationPath $PackagePath `
+            -Force
 
       - name: Upload plugin
         uses: actions/upload-artifact@v4
         with:
           name: IDAExecFunctionsImporter-ida-${{ matrix.ida_version }}-windows-x64
-          path: |
-            ${{ runner.temp }}/plugin-${{ matrix.ida_version }}/*.dll
-            ${{ runner.temp }}/plugin-${{ matrix.ida_version }}/*.pdb
+          path: ${{ runner.temp }}/packages/*.zip
           if-no-files-found: error
+
+  release:
+    name: Create release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: Create GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "release-artifacts/*.zip"
+          artifactErrorsFailBuild: true
+          generateReleaseNotes: true

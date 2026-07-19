@@ -27,6 +27,19 @@
 
 std::unordered_map<std::string, std::pair<char, uint8_t>> PrefixCache;
 
+constexpr asize_t MinNonInlinedStaticClassSize = 0x80;
+constexpr asize_t MaxNonInlinedStaticClassSize = 0x100;
+
+
+bool IsLikelyNonInlinedStaticClass(const func_t* Function)
+{
+	if (!Function)
+		return false;
+
+	const asize_t FunctionSize = Function->end_ea - Function->start_ea;
+	return FunctionSize >= MinNonInlinedStaticClassSize && FunctionSize <= MaxNonInlinedStaticClassSize;
+}
+
 
 std::unordered_set<func_t*> GetFunctionsReferencingThisFunction(const ea_t Address)
 {
@@ -282,11 +295,21 @@ std::unordered_set<func_t*> GetReferenceStaticClassFunctions()
 	const std::unordered_set<func_t*> PrimitiveComponentStrRefs = GetFunctionsReferencingAnyAddress(PrimitiveComponentStrAddrs);
 	const std::unordered_set<func_t*> MeshComponentStrRefs = GetFunctionsReferencingAnyAddress(MeshComponentStrAddrs);
 
-	// Check all references to the strings L"/Script/Engine" and see if they contain L"ActorComponent", L"SceneComponent", etc. to find the StaticClass functions for those classes
+	// Check all references to L"/Script/Engine" and see if they contain one of the
+	// reference class names. Some game builds omit or merge all of those literals, so
+	// retain every Engine-package user as a discovery fallback in that case.
 	std::erase_if(EngineStrRefs, [&](func_t* RefFunc) -> bool
 		{
 			return !ActorComponentStrRefs.contains(RefFunc) && !SceneComponentEngineStrRefs.contains(RefFunc) && !PrimitiveComponentStrRefs.contains(RefFunc) && !MeshComponentStrRefs.contains(RefFunc);
 		});
+	if (EngineStrRefs.empty())
+	{
+		msg(
+			"GetReferenceStaticClassFunctions: reference class anchors did not identify a StaticClass function; "
+			"falling back to all L\"/Script/Engine\" users.\n"
+		);
+		return GetFunctionsReferencingAnyAddress(EngineStrAddrs);
+	}
 
 	return EngineStrRefs; // At this point EngineStrRefs is a set of only StaticClass functions
 }
@@ -294,7 +317,7 @@ std::unordered_set<func_t*> GetReferenceStaticClassFunctions()
 ea_t GetMostReferencedFunctionInStaticClass()
 {
 	// Maps a called function to how many StaticClass functions call it
-	std::unordered_map<ea_t, uint8_t> ReferencedFunctionAndRefCount;
+	std::unordered_map<ea_t, size_t> ReferencedFunctionAndRefCount;
 
 	for (auto* StaticClassFunc : GetReferenceStaticClassFunctions())
 	{
@@ -306,7 +329,7 @@ ea_t GetMostReferencedFunctionInStaticClass()
 	}
 
 	ea_t FuncWithMostReferences = BADADDR;
-	int MaxNumRefsEncountered = 0;
+	size_t MaxNumRefsEncountered = 0;
 	for (auto [ReferencedFunctionAddress, RefCount] : ReferencedFunctionAndRefCount)
 	{
 		if (RefCount > MaxNumRefsEncountered)
@@ -336,8 +359,7 @@ bool NameAllStaticClassFunctions()
 	int NumNamedStaticClasses = 0x0;
 	for (auto* StaticClassFunc : AllStaticClassFunctions)
 	{
-		const auto FunctionSize = StaticClassFunc->end_ea - StaticClassFunc->start_ea;
-		if (FunctionSize < 0x80 || FunctionSize > 0x100)
+		if (!IsLikelyNonInlinedStaticClass(StaticClassFunc))
 			continue; // Some StaticClass calls are inlined and therefore substantially bigger than the average 0xB8 bytes
 
 		NumNonInlinedStaticClassCandidates++;
