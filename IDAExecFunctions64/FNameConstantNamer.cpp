@@ -59,7 +59,7 @@ static bool IsRegisterOperand(const op_t& Operand, const char* RegisterName)
 	if (get_reg_name(&ActualName, Operand.reg, Width != 0 ? Width : 1) <= 0)
 		return false;
 
-	return _stricmp(ActualName.c_str(), RegisterName) == 0;
+	return strieq(ActualName.c_str(), RegisterName);
 }
 
 static bool IsAnyRegisterOperand(const op_t& Operand, const char* Register64, const char* Register32)
@@ -135,9 +135,9 @@ static std::optional<FNameConstructorArguments> RecoverFNameConstructorArguments
 		if (!print_insn_mnem(&Mnemonic, Address))
 			continue;
 
-		const bool IsMove = _stricmp(Mnemonic.c_str(), "mov") == 0;
-		const bool IsLea = _stricmp(Mnemonic.c_str(), "lea") == 0;
-		const bool IsXor = _stricmp(Mnemonic.c_str(), "xor") == 0;
+		const bool IsMove = strieq(Mnemonic.c_str(), "mov");
+		const bool IsLea = strieq(Mnemonic.c_str(), "lea");
+		const bool IsXor = strieq(Mnemonic.c_str(), "xor");
 		const bool ChangesFirstOperand = (Insn.get_canon_feature(PH) & CF_CHG1) != 0;
 
 		auto RecoverAddress = [&](ERecoveredFNameArgument& State, ea_t& Value)
