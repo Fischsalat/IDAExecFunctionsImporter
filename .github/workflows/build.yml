@@ -29,10 +29,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check out IDA ${{ matrix.ida_version }} SDK
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: HexRaysSA/ida-sdk
           ref: ${{ matrix.sdk_ref }}
@@ -40,7 +40,7 @@ jobs:
           submodules: recursive
 
       - name: Set up MSBuild
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v3
 
       - name: Build release plugin
         shell: pwsh
@@ -87,7 +87,7 @@ jobs:
             -Force
 
       - name: Upload plugin
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: IDAExecFunctionsImporter-ida-${{ matrix.ida_version }}-windows-x64
           path: ${{ runner.temp }}/packages/*.zip
@@ -110,10 +110,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check out IDA ${{ matrix.ida_version }} SDK
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: HexRaysSA/ida-sdk
           ref: ${{ matrix.sdk_ref }}
@@ -134,7 +134,7 @@ jobs:
           zip -j "packages/$PackageName" build/IDAExecFunctions64.so
 
       - name: Upload plugin
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: IDAExecFunctionsImporter-ida-${{ matrix.ida_version }}-linux-x64
           path: packages/*.zip
