@@ -66,13 +66,14 @@ The utility is required for the hierarchy window shown below and is used automat
 
 ## Installation
 
-Download the artifact matching your IDA version from the latest GitHub Actions run, or build the solution locally with the matching [official IDA SDK](https://github.com/HexRaysSA/ida-sdk).
+Download the artifact matching your IDA version and OS from the latest GitHub Actions run, or build locally with the matching [official IDA SDK](https://github.com/HexRaysSA/ida-sdk).
 
-Copy `IDAExecFunctions64.dll` into the `plugins` directory of your latest IDA installation, for example:
+Copy the plugin binary into the `plugins` directory of your latest IDA installation:
 
-```text
-C:\Program Files\IDA Professional 9.3\plugins\
-```
+| Platform | Binary                   | Example destination                              |
+| -------- | ------------------------ | ------------------------------------------------ |
+| Windows  | `IDAExecFunctions64.dll` | `C:\Program Files\IDA Professional 9.3\plugins\` |
+| Linux    | `IDAExecFunctions64.so`  | `~/idapro-9.3/plugins/` or `~/.idapro/plugins/`  |
 
 Restart IDA after copying the plugin.
 
@@ -93,21 +94,24 @@ The importer accepts modern V2 `.idmap` files and legacy V1 identifier streams.
 
 Clone the official SDK into `IDA-SDK` using the tag that matches your target IDA version:
 
-```powershell
+```sh
 git clone --recursive --branch v9.4.0-release https://github.com/HexRaysSA/ida-sdk.git IDA-SDK
 ```
 
 The expected layout is:
 
 ```text
-IDAExecFunctionsImporter\
-+-- IDA-SDK\
-|   +-- src\
-|       +-- include\
-|       +-- lib\
-+-- IDAExecFunctions64\
+IDAExecFunctionsImporter/
++-- IDA-SDK/
+|   +-- src/
+|       +-- include/
+|       +-- lib/
++-- IDAExecFunctions64/
++-- CMakeLists.txt
 +-- IDAExecFunctions64.sln
 ```
+
+Windows can be built through the Visual Studio solution, Linux through CMake.
 
 ### Visual Studio
 
@@ -132,7 +136,16 @@ From a Visual Studio Developer PowerShell prompt:
 msbuild IDAExecFunctions64.sln /m /p:Configuration=Release /p:Platform=x64
 ```
 
-Use the SDK tag matching the IDA version you intend to support. The included GitHub Actions workflow builds separate artifacts for IDA 9.2, 9.3, and 9.4.
+### Linux
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+```
+
+`IDA_SDK_PATH` must point at the `src` directory of the SDK and defaults to `IDA-SDK/src`. Pass `-DIDA_SDK_PATH=<path>/src` when the SDK is located elsewhere.
+
+The resulting `build/IDAExecFunctions64.so` is the plugin binary. Copy it into the `plugins` directory of your IDA installation and restart IDA.
 
 ## `.idmap` V1 record format
 
@@ -151,12 +164,12 @@ struct Identifier
 
 The repository also includes a standard-library-only Python/Tkinter visualizer for modern `.idmap` files and legacy identifier streams:
 
-```powershell
-python tools\idmap_visualizer.py path\to\file.idmap
+```sh
+python tools/idmap_visualizer.py path/to/file.idmap
 ```
 
 For parser-only inspection without opening the GUI:
 
-```powershell
-python tools\idmap_visualizer.py path\to\file.idmap --dump-json
+```sh
+python tools/idmap_visualizer.py path/to/file.idmap --dump-json
 ```

@@ -13,8 +13,6 @@
 #include <typeinf.hpp>
 #include <allins.hpp>
 
-#include <Windows.h>
-
 #include "Utility.hpp"
 
 #include <string_view>

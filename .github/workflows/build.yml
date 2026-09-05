@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: IDA ${{ matrix.ida_version }}
+  build-windows:
+    name: IDA ${{ matrix.ida_version }} (Windows)
     runs-on: windows-2025
 
     strategy:
@@ -29,10 +29,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check out IDA ${{ matrix.ida_version }} SDK
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: HexRaysSA/ida-sdk
           ref: ${{ matrix.sdk_ref }}
@@ -40,7 +40,7 @@ jobs:
           submodules: recursive
 
       - name: Set up MSBuild
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v3
 
       - name: Build release plugin
         shell: pwsh
@@ -87,16 +87,63 @@ jobs:
             -Force
 
       - name: Upload plugin
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: IDAExecFunctionsImporter-ida-${{ matrix.ida_version }}-windows-x64
           path: ${{ runner.temp }}/packages/*.zip
           if-no-files-found: error
 
+  build-linux:
+    name: IDA ${{ matrix.ida_version }} (Linux)
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ida_version: "9.2"
+            sdk_ref: v9.2.0-sdk.1
+          - ida_version: "9.3"
+            sdk_ref: v9.3.1-release
+          - ida_version: "9.4"
+            sdk_ref: v9.4.0-release
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Check out IDA ${{ matrix.ida_version }} SDK
+        uses: actions/checkout@v7
+        with:
+          repository: HexRaysSA/ida-sdk
+          ref: ${{ matrix.sdk_ref }}
+          path: ida-sdk-${{ matrix.ida_version }}
+
+      - name: Build release plugin
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DIDA_SDK_PATH="${{ github.workspace }}/ida-sdk-${{ matrix.ida_version }}/src"
+          cmake --build build --parallel
+
+      - name: Package plugin
+        run: |
+          PackageName="IDAExecFunctionsImporter-ida-${{ matrix.ida_version }}-linux-x64.zip"
+
+          mkdir -p packages
+          zip -j "packages/$PackageName" build/IDAExecFunctions64.so
+
+      - name: Upload plugin
+        uses: actions/upload-artifact@v7
+        with:
+          name: IDAExecFunctionsImporter-ida-${{ matrix.ida_version }}-linux-x64
+          path: packages/*.zip
+          if-no-files-found: error
+
   release:
     name: Create release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
 
     permissions:

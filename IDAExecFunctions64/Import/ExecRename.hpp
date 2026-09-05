@@ -15,8 +15,7 @@
 
 #include <Import/MappingsImporter.hpp>
 #include <Import/ExecSignatures.hpp>
-
-#include <Windows.h>
+#include <Utility.hpp>
 
 static const char ExecRenameActionName[] = "idamappings:rename_exec_target";
 static const char ExecApplySignatureActionName[] = "idamappings:apply_exec_signature";
@@ -131,19 +130,19 @@ using ApplyVTableTypeAndNameFn = bool(idaapi*)(vdui_t*, const tinfo_t*, const ch
 using RenameVTableTargetFn = bool(idaapi*)(vdui_t*);
 using RenameVTableTargetToFn = bool(idaapi*)(vdui_t*, const char*);
 
-inline FARPROC GetPseudocodeXrefsExport(const char* Name)
+inline void* GetPseudocodeXrefsExport(const char* Name)
 {
-	HMODULE Module = GetModuleHandleW(L"pseudocode_xrefs.dll");
-	if (Module == nullptr)
-		Module = GetModuleHandleW(L"IDA-VTable-Utility.dll");
+	void* Export = FindLoadedPluginExport("pseudocode_xrefs", Name);
+	if (Export == nullptr)
+		Export = FindLoadedPluginExport("IDA-VTable-Utility", Name);
 
-	if (Module == nullptr)
+	if (Export == nullptr)
 	{
 		load_plugin("pseudocode_xrefs");
-		Module = GetModuleHandleW(L"pseudocode_xrefs.dll");
+		Export = FindLoadedPluginExport("pseudocode_xrefs", Name);
 	}
 
-	return Module != nullptr ? GetProcAddress(Module, Name) : nullptr;
+	return Export;
 }
 
 inline bool ApplyVTableTypeViaPseudocodeXrefs(vdui_t* View, const tinfo_t& FunctionType)

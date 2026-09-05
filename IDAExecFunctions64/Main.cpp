@@ -1,6 +1,7 @@
 #include <fstream>
 #include <vector>
 #include <cstring>
+#include <optional>
 #include <unordered_set>
 #include <filesystem>
 #include <stop_token>
@@ -35,6 +36,18 @@ enum class EAvailableFoldersStatus : uint8
 	CppSDK,      // only CppSDK is present
 	IDAMappings  // only IDAMappings is present
 };
+
+fs::path GetDefaultDumperOutputPath()
+{
+#ifdef __NT__
+	return "C:\\Dumper-7\\";
+#else
+	// Dumper-7 is Windows-only. The only way to use it on Linux is through
+	// a Wine/Proton prefix at an unpredictable path. Leaving the function
+	// here in case Linux support with unified path is added in the future.
+	return {};
+#endif
+}
 
 std::pair<fs::path, EAvailableFoldersStatus> AskForSDKFolder(fs::path DefaultPath)
 {
@@ -420,7 +433,7 @@ struct IDAMappingsPlugin : public plugmod_t
 
 	bool idaapi run(size_t) override
 	{
-		const auto [PathToDumperGeneratedDirectory, FolderStatus] = AskForSDKFolder("C:\\Dumper-7\\");
+		const auto [PathToDumperGeneratedDirectory, FolderStatus] = AskForSDKFolder(GetDefaultDumperOutputPath());
 
 		if (FolderStatus == EAvailableFoldersStatus::None)
 			return false;
@@ -439,7 +452,7 @@ struct IDAMappingsPlugin : public plugmod_t
 			if (fs::exists(SDKHeaderFilePath))
 				ParseSDKHeaderWithClang(SDKHeaderFilePath);
 			else
-				msg("[IDAMappingsImporter] CppSDK\\SDK.hpp not found.\n");
+				msg("[IDAMappingsImporter] CppSDK/SDK.hpp not found.\n");
 		}
 
 		ClearStaticClassPrefixCache(); // fresh per run since only the V2 path repopulates it

@@ -1,6 +1,14 @@
 #include "Utility.hpp"
 
+#include <algorithm>
+#include <string_view>
+
+#ifdef __NT__
 #include <Windows.h>
+#else
+#include <dlfcn.h>
+#include <link.h>
+#endif
 
 #include <ida.hpp>
 #include <segment.hpp>
@@ -9,13 +17,46 @@
 
 std::string WStrToStr(const std::wstring& WStr)
 {
-	if (WStr.empty())
-		return std::string();
+	std::string Str;
+	Str.reserve(WStr.size());
 
-	const auto SizeNeeded = WideCharToMultiByte(CP_UTF8, 0, WStr.c_str(), static_cast<int>(WStr.size()), NULL, 0, NULL, NULL);
+	for (size_t Index = 0; Index < WStr.size(); ++Index)
+	{
+		uint32 CodePoint = static_cast<uint32>(WStr[Index]);
 
-	std::string Str(SizeNeeded, 0);
-	WideCharToMultiByte(CP_UTF8, 0, WStr.c_str(), static_cast<int>(WStr.size()), Str.data(), SizeNeeded, NULL, NULL);
+		if (CodePoint >= 0xD800 && CodePoint <= 0xDBFF && (Index + 1) < WStr.size())
+		{
+			const uint32 LowSurrogate = static_cast<uint32>(WStr[Index + 1]);
+			if (LowSurrogate >= 0xDC00 && LowSurrogate <= 0xDFFF)
+			{
+				CodePoint = 0x10000 + ((CodePoint - 0xD800) << 10) + (LowSurrogate - 0xDC00);
+				++Index;
+			}
+		}
+
+		if (CodePoint < 0x80)
+		{
+			Str.push_back(static_cast<char>(CodePoint));
+		}
+		else if (CodePoint < 0x800)
+		{
+			Str.push_back(static_cast<char>(0xC0 | (CodePoint >> 6)));
+			Str.push_back(static_cast<char>(0x80 | (CodePoint & 0x3F)));
+		}
+		else if (CodePoint < 0x10000)
+		{
+			Str.push_back(static_cast<char>(0xE0 | (CodePoint >> 12)));
+			Str.push_back(static_cast<char>(0x80 | ((CodePoint >> 6) & 0x3F)));
+			Str.push_back(static_cast<char>(0x80 | (CodePoint & 0x3F)));
+		}
+		else
+		{
+			Str.push_back(static_cast<char>(0xF0 | (CodePoint >> 18)));
+			Str.push_back(static_cast<char>(0x80 | ((CodePoint >> 12) & 0x3F)));
+			Str.push_back(static_cast<char>(0x80 | ((CodePoint >> 6) & 0x3F)));
+			Str.push_back(static_cast<char>(0x80 | (CodePoint & 0x3F)));
+		}
+	}
 
 	return Str;
 }
@@ -79,4 +120,56 @@ bool IsValidCodePointer(ea_t Address)
 		return false;
 
 	return Seg->type == SEG_CODE;
+}
+
+#ifndef __NT__
+namespace
+{
+	struct LoadedModuleSearch
+	{
+		std::string_view FileName;
+		std::string Path;
+	};
+
+	int MatchLoadedModuleFileName(dl_phdr_info* Info, size_t, void* Context)
+	{
+		if (!Info->dlpi_name || Info->dlpi_name[0] == '\0')
+			return 0;
+
+		LoadedModuleSearch& Search = *static_cast<LoadedModuleSearch*>(Context);
+
+		const std::string_view Path(Info->dlpi_name);
+		const size_t FileNameStart = Path.find_last_of('/');
+
+		if (Path.substr(FileNameStart == std::string_view::npos ? 0 : FileNameStart + 1) != Search.FileName)
+			return 0;
+
+		Search.Path = Path;
+		return 1;
+	}
+}
+#endif
+
+void* FindLoadedPluginExport(const char* PluginName, const char* SymbolName)
+{
+#ifdef __NT__
+	const HMODULE Module = GetModuleHandleA((std::string(PluginName) + ".dll").c_str());
+
+	return Module ? reinterpret_cast<void*>(GetProcAddress(Module, SymbolName)) : nullptr;
+#else
+	const std::string FileName = std::string(PluginName) + ".so";
+
+	LoadedModuleSearch Search{ FileName, {} };
+	if (dl_iterate_phdr(&MatchLoadedModuleFileName, &Search) == 0)
+		return nullptr;
+
+	void* Module = dlopen(Search.Path.c_str(), RTLD_NOLOAD | RTLD_NOW);
+	if (!Module)
+		return nullptr;
+
+	void* const Symbol = dlsym(Module, SymbolName);
+	dlclose(Module);
+
+	return Symbol;
+#endif
 }
