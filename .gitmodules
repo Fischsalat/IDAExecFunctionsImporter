@@ -1,0 +1,3 @@
+[submodule "IDA-SDK"]
+	path = IDA-SDK
+	url = https://github.com/HexRaysSA/ida-sdk.git
